@@ -235,5 +235,16 @@ exports.login = async (req, res) => {
 };
 
 // Change Password
+exports.changePassword = async(req, res) => {
+  // get data from req ki body 
+  // get oldPassword, newPassword, confirmPassword
+  // Validation
+  
 
-// 2nd Video 1hr 10 min
+  // Update password in Database 
+  // Send mail - Password Updated
+  // return response
+
+}
+
+
