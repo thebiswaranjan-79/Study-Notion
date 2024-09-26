@@ -235,16 +235,70 @@ exports.login = async (req, res) => {
 };
 
 // Change Password
-exports.changePassword = async(req, res) => {
-  // get data from req ki body 
-  // get oldPassword, newPassword, confirmPassword
-  // Validation
-  
+exports.changePassword = async (req, res) => {
+  // Change Password
+  exports.changePassword = async (req, res) => {
+    try {
+      // Get data from request body
+      const { oldPassword, newPassword, confirmPassword } = req.body;
 
-  // Update password in Database 
-  // Send mail - Password Updated
-  // return response
+      // Validate input fields
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
+      }
 
-}
+      // Check if new password and confirm password match
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "New password and confirm password do not match",
+        });
+      }
 
+      // Find the user in the database
+      const userId = req.user.id; // assuming the user is authenticated and ID is available in req.user
+      const user = await User.findById(userId);
 
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Check if the old password matches the user's current password
+      const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isPasswordMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Old password is incorrect",
+        });
+      }
+
+      // Hash the new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update the user's password in the database
+      user.password = hashedNewPassword;
+      await user.save();
+
+      // Send an email notifying the user about the password change (optional)
+      // You can use any mailing service like SendGrid, Nodemailer, etc.
+
+      // Return a success response
+      return res.status(200).json({
+        success: true,
+        message: "Password updated successfully",
+      });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Password change failed",
+      });
+    }
+  };
+};
