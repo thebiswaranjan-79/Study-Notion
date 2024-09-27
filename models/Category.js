@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const tagSchema = new mongoose.Schema({
+const categorySchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -16,6 +16,6 @@ const tagSchema = new mongoose.Schema({
     },
 }, { timestamps: true }); // Adding timestamps for createdAt and updatedAt fields
 
-const Tag = mongoose.model('Tag', tagSchema);
+const Category = mongoose.model('Tag', categorySchema);
 
-module.exports = Tag;
+module.exports = Category;
