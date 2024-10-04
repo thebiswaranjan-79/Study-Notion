@@ -103,33 +103,31 @@ exports.createCourse = async (req, res) => {
 
 // get all Courses handeler function
 
-exports.showAllCourses = async (req, res) => {
-  try {
-    // Fetch all courses and return all fields by setting projection to true
-    const allCourses = await Course.find(
-      {},
-      {
-        courseName: true,
-        price: true,
-        thumbnail: true,
-        instructor: true,
-        ratingAndReviews: true,
-        studentsEnrolled: true,
-      }
-    ).populate("instructor").exec();
-
-    // Return the courses data in the response
-    return res.status(200).json({
-      success: true,
-      message: "All courses fetched successfully",
-      data: allCourses,
-    });
-  } catch (error) {
-    console.error("Error fetching courses:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Can't fetch Course Data",
-      error: error.message,
-    });
-  }
+exports.getAllCourses = async (req, res) => {
+	try {
+		const allCourses = await Course.find(
+			{},
+			{
+				courseName: true,
+				price: true,
+				thumbnail: true,
+				instructor: true,
+				ratingAndReviews: true,
+				studentsEnroled: true,
+			}
+		)
+			.populate("instructor")
+			.exec();
+		return res.status(200).json({
+			success: true,
+			data: allCourses,
+		});
+	} catch (error) {
+		console.log(error);
+		return res.status(404).json({
+			success: false,
+			message: `Can't Fetch Course Data`,
+			error: error.message,
+		});
+	}
 };
