@@ -42,40 +42,37 @@ exports.updateProfile = async (req, res) => {
     }
 };  
 
-
-//deleteAccount
-//Explore -> how can we schedule this deletion operation
+// Delete Account 
 exports.deleteAccount = async (req, res) => {
-    try{
-        //get id 
-        const id = req.user.id;
-        //validation
-        const userDetails = await User.findById(id);
-        if(!userDetails) {
-            return res.status(404).json({
-                success:false,
-                message:'User not found',
-            });
-        } 
-        //delete profile
-        await Profile.findByIdAndDelete({_id:userDetails.additionalDetails});
-        //TOOD: HW unenroll user form all enrolled courses
-        //delete user
-        await User.findByIdAndDelete({_id:id});
-       
-        //return response
-        return res.status(200).json({
-            success:true,
-            message:'User Deleted Successfully',
-        })
-
-    }
-    catch(error) {
-        return res.status(500).json({
-            success:false,
-            message:'User cannot be deleted successfully',
-        });
-    }
+	try {
+		// TODO: Find More on Job Schedule
+		// const job = schedule.scheduleJob("10 * * * * *", function () {
+		// 	console.log("The answer to life, the universe, and everything!");
+		// });
+		// console.log(job);
+		const id = req.user.id;
+		const user = await User.findById({ _id: id });
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "User not found",
+			});
+		}
+		// Delete Assosiated Profile with the User
+		await Profile.findByIdAndDelete({ _id: user.userDetails });
+		// TODO: Unenroll User From All the Enrolled Courses
+		// Now Delete User
+		await user.findByIdAndDelete({ _id: id });
+		res.status(200).json({
+			success: true,
+			message: "User deleted successfully",
+		});
+	} catch (error) {
+		console.log(error);
+		res
+			.status(500)
+			.json({ success: false, message: "User Cannot be deleted successfully" });
+	}
 };
 
 
