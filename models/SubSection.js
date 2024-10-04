@@ -1,25 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const subSectionSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    timeDuration: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String,
-        trim: true,
-    },
-    videoUrl: {
-        type: String,
-        required: true,
-    },
-}, { timestamps: true }); // Adding timestamps for createdAt and updatedAt fields
+const SubSectionSchema = new mongoose.Schema({
+	title: { type: String },
+	timeDuration: { type: String },
+	description: { type: String },
+	videoUrl: { type: String },
+});
 
-const SubSection = mongoose.model('SubSection', subSectionSchema);
-
-module.exports = SubSection;
+module.exports = mongoose.model("SubSection", SubSectionSchema);
