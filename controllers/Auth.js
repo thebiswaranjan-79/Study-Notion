@@ -3,6 +3,9 @@ const OTP = require("../models/OTP");
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const mailSender = require("../utils/mailSender");
+const { passwordUpdated } = require("../mail/templates/passwordUpdate");
+const Profile = require("../models/Profile");
 require("dotenv").config();
 
 // Send OTP
@@ -234,71 +237,75 @@ exports.login = async (req, res) => {
   }
 };
 
-// Change Password
+// Controller for Changing Password
 exports.changePassword = async (req, res) => {
-  // Change Password
-  exports.changePassword = async (req, res) => {
-    try {
-      // Get data from request body
-      const { oldPassword, newPassword, confirmPassword } = req.body;
+  try {
+    // Get user data from req.user
+    const userDetails = await User.findById(req.user.id);
 
-      // Validate input fields
-      if (!oldPassword || !newPassword || !confirmPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "All fields are required",
-        });
-      }
+    // Get old password, new password, and confirm new password from req.body
+    const { oldPassword, newPassword, confirmNewPassword } = req.body;
 
-      // Check if new password and confirm password match
-      if (newPassword !== confirmPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "New password and confirm password do not match",
-        });
-      }
+    // Validate old password
+    const isPasswordMatch = await bcrypt.compare(
+      oldPassword,
+      userDetails.password
+    );
+    if (!isPasswordMatch) {
+      // If old password does not match, return a 401 (Unauthorized) error
+      return res
+        .status(401)
+        .json({ success: false, message: "The password is incorrect" });
+    }
 
-      // Find the user in the database
-      const userId = req.user.id; // assuming the user is authenticated and ID is available in req.user
-      const user = await User.findById(userId);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-
-      // Check if the old password matches the user's current password
-      const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
-      if (!isPasswordMatch) {
-        return res.status(401).json({
-          success: false,
-          message: "Old password is incorrect",
-        });
-      }
-
-      // Hash the new password
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-      // Update the user's password in the database
-      user.password = hashedNewPassword;
-      await user.save();
-
-      // Send an email notifying the user about the password change (optional)
-      // You can use any mailing service like SendGrid, Nodemailer, etc.
-
-      // Return a success response
-      return res.status(200).json({
-        success: true,
-        message: "Password updated successfully",
-      });
-    } catch (error) {
-      console.error("Error changing password:", error);
-      return res.status(500).json({
+    // Match new password and confirm new password
+    if (newPassword !== confirmNewPassword) {
+      // If new password and confirm new password do not match, return a 400 (Bad Request) error
+      return res.status(400).json({
         success: false,
-        message: "Password change failed",
+        message: "The password and confirm password does not match",
       });
     }
-  };
+
+    // Update password
+    const encryptedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUserDetails = await User.findByIdAndUpdate(
+      req.user.id,
+      { password: encryptedPassword },
+      { new: true }
+    );
+
+    // Send notification email
+    try {
+      const emailResponse = await mailSender(
+        updatedUserDetails.email,
+        passwordUpdated(
+          updatedUserDetails.email,
+          `Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`
+        )
+      );
+      console.log("Email sent successfully:", emailResponse.response);
+    } catch (error) {
+      // If there's an error sending the email, log the error and return a 500 (Internal Server Error) error
+      console.error("Error occurred while sending email:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error occurred while sending email",
+        error: error.message,
+      });
+    }
+
+    // Return success response
+    return res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    // If there's an error updating the password, log the error and return a 500 (Internal Server Error) error
+    console.error("Error occurred while updating password:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error occurred while updating password",
+      error: error.message,
+    });
+  }
 };
